@@ -11,6 +11,7 @@ typedef struct {
     pthread_t thread_id;
 } client_t;
 
+void* handle_client(void* arg);
 client_t* create_client(int clientfd, struct sockaddr_in client_addr);
 
 #endif
