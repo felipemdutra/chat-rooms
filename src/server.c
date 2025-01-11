@@ -1,6 +1,7 @@
 #include <unistd.h>
 
 #include "../include/server.h"
+#include "../include/client.h"
 #include "../include/socket.h"
 
 int start_server() {
@@ -29,12 +30,17 @@ int start_server() {
 
         client_sock = accept_client(server_sock);
         if (client_sock < 0) {
-            close(server_sock);
-            return -1;
+            continue;
+        }
+
+        /* Create a new thread for connected client */
+        client_t* client = create_client(client_sock);
+        if (!client) {
+            close(client->sockfd);
+            continue;
         }
     }
 
-    close(client_sock);
     close(server_sock);
     return 0;
 }
