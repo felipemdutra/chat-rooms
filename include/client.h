@@ -12,7 +12,7 @@ typedef struct {
 } client_t;
 
 void* handle_client(void* arg);
-client_t* create_client(int clientfd, struct sockaddr_in client_addr);
+client_t* create_client(int clientfd);
 ssize_t read_message(client_t* client, char* buf, size_t buf_size);
 
 #endif
