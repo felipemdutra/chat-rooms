@@ -10,6 +10,32 @@
 
 #include "../include/client.h"
 
+#define MAX_CLIENTS 100
+
+client_t* clients[MAX_CLIENTS];
+int num_clients = 0;
+pthread_mutex_t clients_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+int send_global_message(client_t* sender, const char *message) {
+    char buf[1100];
+
+    snprintf(buf, sizeof(buf), "%s > %s", sender->username, message);
+    printf("%s\n", sender->username);
+
+    for (int i = 0; i < num_clients; i++) {
+        if (clients[i] == sender) {
+            continue;
+        }
+
+        if (send(clients[i]->sockfd, buf, strlen(buf), 0) < 0) {
+            printf("Failed to send global message: %s\n", strerror(errno));
+            return -1;
+        }
+    }
+
+    return 0;
+}
+
 ssize_t read_message(client_t* client, char* buf, size_t buf_size) {
     ssize_t bytes_read = recv(client->sockfd, buf, buf_size, 0);
     if (bytes_read <= 0) {
@@ -25,7 +51,6 @@ ssize_t read_message(client_t* client, char* buf, size_t buf_size) {
  */
 void* handle_client(void* arg) {
     client_t* client = (client_t*)arg;
-
     char buf[1024];
     
     while (1) {
@@ -34,11 +59,11 @@ void* handle_client(void* arg) {
             break;
         }
         buf[bytes_read] = '\0';
-        printf("Received from %s: %s\n",client->username, buf);
+        send_global_message(client, buf);
     }
 
     close(client->sockfd);
-    pthread_exit(NULL);
+    pthread_exit("Client");
     return NULL;
 }
 
@@ -69,6 +94,18 @@ client_t* create_client(int clientfd) {
         free(client);
         return NULL;
     }
+
+    pthread_mutex_lock(&clients_mutex);
+
+    if (num_clients >= MAX_CLIENTS) {
+        printf("Maximum clients reached, cannot add more clients");
+        return NULL;
+    } else {
+        clients[num_clients] = client;
+        num_clients++;
+    }
+
+    pthread_mutex_unlock(&clients_mutex);
 
     return client;
 }
