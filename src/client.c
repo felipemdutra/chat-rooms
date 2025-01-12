@@ -35,6 +35,15 @@ int send_global_message(client_t* sender, const char *message) {
     return 0;
 }
 
+int send_system_message(client_t* client, char* message) {
+    if (send(client->sockfd, message, strlen(message), 0) < 0) {
+        printf("Failed to send system message: %s\n", strerror(errno));
+        return -1;
+    }
+
+    return 0;
+}
+
 ssize_t read_message(client_t* client, char* buf, size_t buf_size) {
     ssize_t bytes_read = recv(client->sockfd, buf, buf_size, 0);
     if (bytes_read <= 0) {
