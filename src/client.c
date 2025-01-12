@@ -9,8 +9,8 @@
 #include <unistd.h>
 
 #include "../include/client.h"
+#include "../include/command.h"
 
-#define MAX_CLIENTS 100
 
 client_t* clients[MAX_CLIENTS];
 int num_clients = 0;
@@ -20,7 +20,6 @@ int send_global_message(client_t* sender, const char *message) {
     char buf[1100];
 
     snprintf(buf, sizeof(buf), "%s > %s", sender->username, message);
-    printf("%s\n", sender->username);
 
     for (int i = 0; i < num_clients; i++) {
         if (clients[i] == sender) {
@@ -59,6 +58,7 @@ void* handle_client(void* arg) {
             break;
         }
         buf[bytes_read] = '\0';
+        handle_commands(client, buf);
         send_global_message(client, buf);
     }
 
@@ -108,5 +108,21 @@ client_t* create_client(int clientfd) {
     pthread_mutex_unlock(&clients_mutex);
 
     return client;
+}
+
+/**
+ * @param client The client that asked for the change of username.
+ * @param new_name The name the client wants.
+ *
+ * @return 0 on success, -1 on failure.
+ */
+int change_name(client_t* client, const char* new_name) {
+    if (strlen(new_name) > NAME_MAX_CHAR) {
+        send_system_message(client, "Username is too big. Max characters: 20");
+        return -1;
+    }
+
+    strcpy(client->username, new_name);
+    return 0;
 }
 
