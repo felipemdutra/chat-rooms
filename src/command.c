@@ -1,4 +1,3 @@
-#include <errno.h>
 #include <stdio.h>
 #include <sys/socket.h>
 #include <string.h>
@@ -6,15 +5,6 @@
 #include "../include/client.h"
 #include "../include/command.h"
 #include "../include/room.h"
-
-int send_system_message(client_t* client, char* message) {
-    if (send(client->sockfd, message, strlen(message), 0) < 0) {
-        printf("Failed to send system message: %s\n", strerror(errno));
-        return -1;
-    }
-
-    return 0;
-}
 
 void handle_commands(client_t* client, char* buf) {
     if (buf[0] != '\\') {
