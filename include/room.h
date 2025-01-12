@@ -3,6 +3,8 @@
 
 #include "./client.h"
 
+#define MAX_ROOMS 15
+
 typedef struct {
     client_t* leader;
     client_t** clients;
@@ -12,6 +14,8 @@ typedef struct {
 } room_t;
 
 room_t* create_room(char *room_name, int max_clients, client_t* creator);
+room_t* find_room(char* room_name);
+int join_room(client_t* client, char* room_name);
 
 #endif
 
