@@ -9,6 +9,7 @@
 #include <unistd.h>
 
 #include "../include/client.h"
+#include "../include/room.h"
 #include "../include/command.h"
 
 
@@ -16,18 +17,20 @@ client_t* clients[MAX_CLIENTS];
 int num_clients = 0;
 pthread_mutex_t clients_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-int send_global_message(client_t* sender, const char *message) {
-    char buf[1100];
+/**
+ * This function DOES NOT send the message to the person that sent it.
+ *
+ * @param sender The client who sent the message. They will NOT receive the message.
+ * @param receiver The client who will receive the message.
+ * 
+ * @return 0 on success, -1 on failure.
+ */
+int send_message(client_t* sender, client_t* receiver, const char* message) {
+    
 
-    snprintf(buf, sizeof(buf), "%s > %s", sender->username, message);
-
-    for (int i = 0; i < num_clients; i++) {
-        if (clients[i] == sender) {
-            continue;
-        }
-
-        if (send(clients[i]->sockfd, buf, strlen(buf), 0) < 0) {
-            printf("Failed to send global message: %s\n", strerror(errno));
+    if (sender != receiver) {
+        if (send(receiver->sockfd, message, strlen(message), 0) < 0) {
+            send_system_message(sender, "Failed to send message");
             return -1;
         }
     }
@@ -35,9 +38,30 @@ int send_global_message(client_t* sender, const char *message) {
     return 0;
 }
 
+int send_to_room(client_t* sender, const char* message) {
+    if (!sender->curr_room) {
+        send_system_message(sender, "You are not in a room.\nType \\join <room_name> to join a room\nType \\list to see available rooms\n");
+        return -1;
+    }
+
+    room_t* room = sender->curr_room;
+    char new_msg[1024];
+
+    snprintf(new_msg, sizeof(new_msg), "%s > %s", sender->username, message);
+
+    for (int i = 0; i < room->curr_num_clients; i++) {
+        send_message(sender, room->clients[i], new_msg);
+    }
+    
+    return 0;
+}
+
 int send_system_message(client_t* client, char* message) {
-    if (send(client->sockfd, message, strlen(message), 0) < 0) {
-        printf("Failed to send system message: %s\n", strerror(errno));
+    if (message[0] == '\\') {
+        return 0;
+    }
+
+    if (send_message(NULL, client, message) < 0) {
         return -1;
     }
 
@@ -68,7 +92,9 @@ void* handle_client(void* arg) {
         }
         buf[bytes_read] = '\0';
         handle_commands(client, buf);
-        send_global_message(client, buf);
+        if (send_to_room(client, buf) < 0) {
+            continue;
+        }
     }
 
     close(client->sockfd);
