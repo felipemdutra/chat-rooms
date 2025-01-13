@@ -26,11 +26,13 @@ pthread_mutex_t clients_mutex = PTHREAD_MUTEX_INITIALIZER;
  * @return 0 on success, -1 on failure.
  */
 int send_message(client_t* sender, client_t* receiver, const char* message) {
-    
+    if (!receiver) {
+        return -1;
+    }
 
     if (sender != receiver) {
         if (send(receiver->sockfd, message, strlen(message), 0) < 0) {
-            send_system_message(sender, "Failed to send message");
+            send_system_message(sender, "Failed to send message\n");
             return -1;
         }
     }
@@ -38,7 +40,44 @@ int send_message(client_t* sender, client_t* receiver, const char* message) {
     return 0;
 }
 
+int broadcast_to_room(room_t* room, const char* message) {
+    if (!room) {
+        printf("Room doesn't exist\n");
+        return -1;
+    }
+
+    if (room->curr_num_clients <= 0) {
+        printf("No clients inside that room\n");
+        return -1;
+    }
+
+    for (int i = 0; i < room->curr_num_clients; i++) {
+        send_message(NULL, room->clients[i], message);
+    }
+
+    return 0;
+}
+
+int send_disconnected_message(client_t* client) {
+    char buffer[] = " disconected\n";
+    char message[124] = "";
+
+    strncat(message, client->username, sizeof(message) - strlen(message) - 1);
+    strncat(message, buffer, sizeof(message) - strlen(message) - 1);
+
+    if (broadcast_to_room(client->curr_room, message) < 0) {
+        return -1;
+    }
+
+    return 0;
+}
+
 int send_to_room(client_t* sender, const char* message) {
+    // Don't send if client types a command.
+    if (message[0] == '\\') {
+        return 0;
+    }
+
     if (!sender->curr_room) {
         send_system_message(sender, "You are not in a room.\nType \\join <room_name> to join a room\nType \\list to see available rooms\n");
         return -1;
@@ -71,7 +110,7 @@ int send_system_message(client_t* client, char* message) {
 ssize_t read_message(client_t* client, char* buf, size_t buf_size) {
     ssize_t bytes_read = recv(client->sockfd, buf, buf_size, 0);
     if (bytes_read <= 0) {
-        printf("%s disconnected\n", client->username);
+        send_disconnected_message(client);
         return -1;
     }
 
@@ -97,7 +136,7 @@ void* handle_client(void* arg) {
         }
     }
 
-    close(client->sockfd);
+    delete_client(client);
     pthread_exit("Client");
     return NULL;
 }
@@ -126,14 +165,14 @@ client_t* create_client(int clientfd) {
     if (pthread_create(&client->thread_id, NULL, handle_client, (void*)client)
             != 0) {
         printf("Failed to create client thread: %s\n", strerror(errno));
-        free(client);
+        delete_client(client);
         return NULL;
     }
 
     pthread_mutex_lock(&clients_mutex);
 
     if (num_clients >= MAX_CLIENTS) {
-        printf("Maximum clients reached, cannot add more clients");
+        printf("Maximum clients reached, cannot add more clients\n");
         return NULL;
     } else {
         clients[num_clients] = client;
@@ -143,6 +182,12 @@ client_t* create_client(int clientfd) {
     pthread_mutex_unlock(&clients_mutex);
 
     return client;
+}
+
+void delete_client(client_t* client) {
+    close(client->sockfd);
+    client->curr_room = NULL;
+    free(client);
 }
 
 /**
