@@ -12,8 +12,8 @@ void handle_commands(client_t* client, char* buf) {
     }
 
     char command[256];
-    char args[256] = {0};
-    if (sscanf(buf, "\\%s %[^\n]", command, args) < 1) {
+    char args[256] = "";
+    if (sscanf(buf, "\\%255s %255[^\n]", command, args) < 1) {
         send_system_message(client, "Invalid command format.\n");
     }
 
@@ -23,6 +23,10 @@ void handle_commands(client_t* client, char* buf) {
 
     if (strcmp(command, "create") == 0) {
         room_t* room = create_room(args, 10, client);
+    }
+
+    if (strcmp(command, "join") == 0) {
+        join_room(client, args);
     }
 }
 
