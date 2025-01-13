@@ -20,6 +20,7 @@ int delete_room(const char* room_name, client_t* owner);
 room_t* find_room(const char* room_name);
 int join_room(client_t* client, char* room_name);
 room_t** get_rooms();
+int exit_room(client_t* client, room_t* room);
 
 #endif
 
