@@ -10,7 +10,7 @@ BIN_DIR = bin
 # Files and targets
 SRC_FILES = $(wildcard $(SRC_DIR)/*.c)
 OBJ_FILES = $(SRC_FILES:$(SRC_DIR)/%.c=$(OBJ_DIR)/%.o)
-EXEC = $(BIN_DIR)/chat_app
+EXEC = ./chat_app
 
 # Default target
 all: $(EXEC)
@@ -26,8 +26,7 @@ $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
 
 # Clean object files and executable
 clean:
-	rm -rf $(OBJ_DIR) $(BIN_DIR)
-
+	rm -rf $(OBJ_DIR)
 # Phony targets
 .PHONY: all clean
 
