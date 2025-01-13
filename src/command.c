@@ -34,15 +34,20 @@ void handle_commands(client_t* client, char* buf) {
         join_room(client, args);
     }
 
+    if (strcmp(command, "leave") == 0) {
+        send_disconnected_message(client);
+        exit_room(client, client->curr_room);
+    }
+
     if (strcmp(command, "list") == 0) {
        room_t** rooms = get_rooms();
         if (!rooms) {
-            send_system_message(client, "Failed to retrieve rooms list");
+            send_system_message(client, "Failed to retrieve rooms list\n");
             return;
         }
 
         if (room_count == 0) {
-            send_system_message(client, "No rooms available");
+            send_system_message(client, "No rooms available\n");
             return;
         } 
         char room_list[1024] = "Available rooms:\n";
