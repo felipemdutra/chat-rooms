@@ -127,7 +127,7 @@ client_t* create_client(int clientfd) {
  */
 int change_name(client_t* client, const char* new_name) {
     if (strlen(new_name) > NAME_MAX_CHAR) {
-        send_system_message(client, "Username is too big. Max characters: 20");
+        send_system_message(client, "Username is too big. Max characters: 20\n");
         return -1;
     }
 
