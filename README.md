@@ -98,7 +98,9 @@ Type and press Enter.
 
 # Known Issues
 
-- If not in a room, if a client sends a command, they will still get the message "You are not in a room".
- 
-- If in a room, if a client sends a command, all clients inside that room will receive the command message.
+- When a client disconnects, the client array doesn't change, causing errors
+
+- When a room is deleted, the rooms array doesn't change, causing errors
+
+- When a client leaves a room, the room's clients array does't change, causing errors
 
