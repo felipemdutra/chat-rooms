@@ -5,6 +5,7 @@
 #include <errno.h>
 
 #include "../include/room.h"
+#include "../include/client.h"
 
 room_t* rooms[MAX_ROOMS];
 pthread_mutex_t rooms_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -111,6 +112,34 @@ int join_room(client_t* client, char* room_name) {
 
     pthread_mutex_unlock(&rooms_mutex);
 
+    client->curr_room = room;
     send_system_message(client, "You joined a room. Type \\exit to exit\n");
     return 0;
 }
+
+int exit_room(client_t* client, room_t* room) {
+    if (!client->curr_room) {
+        send_system_message(client, "You are not in a room. Type \\join <room_name> to join a room\nType \\list to see available rooms\n");
+        return -1;
+    }
+
+    client->curr_room = NULL;
+    /* TODO: Remove client from room's clients array */
+    room->curr_num_clients--;
+
+    return 0;
+}
+
+room_t** get_rooms() {
+    room_t** all_rooms = malloc(room_count * sizeof(room_t));
+    if (!all_rooms) {
+        return NULL;
+    }
+
+    for (int i = 0; i < room_count; i++) {
+        all_rooms[i] = rooms[i];
+    }
+
+    return all_rooms;
+}
+
