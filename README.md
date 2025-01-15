@@ -60,7 +60,7 @@ Open multiple terminal windows to simulate different clients.
 
 # List of commands
 
-After running the server and connecting as a client you try the following commands:
+After running the server and connecting as a client, try the following commands:
 
 - Set a nickname:
 
